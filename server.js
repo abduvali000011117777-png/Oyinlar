@@ -3,15 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
 import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
 import { createServer as createViteServer } from 'vite';
-import type {
-  OrderRecord,
-  OrderStatus,
-  PaymentMethod,
-  PhoneCategory,
-  PhoneProduct,
-} from './src/types/store.ts';
 
 dotenv.config();
 
@@ -23,7 +15,17 @@ const SESSION_SECRET =
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
 
-const SEED_PRODUCTS: PhoneProduct[] = [
+const VALID_CATEGORIES = ['flagman', 'biznes', 'bukiluvchan', 'hamyonbop'];
+const VALID_STATUSES = [
+  'Yangi',
+  'Tasdiqlandi',
+  'Yetkazilmoqda',
+  'Yetkazildi',
+  'Bekor qilindi',
+];
+const VALID_PAYMENTS = ['Naqd', 'Karta', 'Muddatli to‘lov'];
+
+const SEED_PRODUCTS = [
   {
     id: 'ph-iphone-16-pro',
     name: 'iPhone 16 Pro Max',
@@ -190,23 +192,17 @@ const SEED_PRODUCTS: PhoneProduct[] = [
   },
 ];
 
-interface PersistedStore {
-  products: PhoneProduct[];
-  orders: OrderRecord[];
-  orderSeq: number;
-}
-
-function loadStore(): PersistedStore {
+function loadStore() {
   try {
     if (fs.existsSync(STORE_FILE)) {
       const raw = fs.readFileSync(STORE_FILE, 'utf8');
-      const parsed = JSON.parse(raw) as PersistedStore;
+      const parsed = JSON.parse(raw);
       if (Array.isArray(parsed.products) && Array.isArray(parsed.orders)) {
         return parsed;
       }
     }
   } catch {
-    // Fallback to seed
+    // Fallback to seed data
   }
   return {
     products: [...SEED_PRODUCTS],
@@ -215,7 +211,7 @@ function loadStore(): PersistedStore {
   };
 }
 
-function saveStore(state: PersistedStore): void {
+function saveStore(state) {
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -226,20 +222,16 @@ function saveStore(state: PersistedStore): void {
   }
 }
 
-const store: PersistedStore = loadStore();
+const store = loadStore();
 
-// Server-side memory for claimed first-run admin password hash & runtime Telegram config
-let adminPassHash: { salt: string; hash: string } | null = null;
-const runtimeTelegram: { botToken: string; channelId: string } = {
+// Server-side in-memory credentials (never saved as plaintext to disk)
+let adminPassHash = null;
+const runtimeTelegram = {
   botToken: '',
   channelId: '',
 };
 
-function getTelegramCredentials(): {
-  botToken: string;
-  channelId: string;
-  source: 'env' | 'runtime' | 'none';
-} {
+function getTelegramCredentials() {
   const envToken = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
   const envChannel = (process.env.TELEGRAM_CHANNEL_ID || '').trim();
   if (envToken && envChannel) {
@@ -255,17 +247,17 @@ function getTelegramCredentials(): {
   return { botToken: '', channelId: '', source: 'none' };
 }
 
-function maskToken(token: string): string {
+function maskToken(token) {
   if (!token || token.length < 10) return '';
   return `${token.slice(0, 5)}••••${token.slice(-4)}`;
 }
 
-async function sendTelegramMessage(text: string): Promise<{ sent: boolean; info: string }> {
+async function sendTelegramMessage(text) {
   const creds = getTelegramCredentials();
   if (!creds.botToken || !creds.channelId) {
     return {
       sent: false,
-      info: 'Telegram bot token yoki kanal ID sozlanmagan (Admin panel -> Telegram orqali ulang)',
+      info: 'Telegram bot token yoki kanal ID sozlanmagan (Admin panel -> Telegram Bot bo‘limidan ulang)',
     };
   }
 
@@ -280,7 +272,7 @@ async function sendTelegramMessage(text: string): Promise<{ sent: boolean; info:
       }),
     });
 
-    const data = (await response.json()) as { ok?: boolean; description?: string };
+    const data = await response.json();
     if (!response.ok || !data.ok) {
       return {
         sent: false,
@@ -296,11 +288,11 @@ async function sendTelegramMessage(text: string): Promise<{ sent: boolean; info:
   }
 }
 
-function formatPriceUzs(val: number): string {
-  return `${val.toLocaleString('uz-UZ')} so‘m`;
+function formatPriceUzs(val) {
+  return `${Number(val).toLocaleString('uz-UZ')} so‘m`;
 }
 
-function formatOrderTelegramText(order: OrderRecord): string {
+function formatOrderTelegramText(order) {
   const lines = [
     `🔥 YANGI BUYURTMA #${order.orderCode}`,
     `━━━━━━━━━━━━━━━━━━`,
@@ -326,7 +318,7 @@ function formatOrderTelegramText(order: OrderRecord): string {
   return lines.join('\n');
 }
 
-function signAdminToken(): string {
+function signAdminToken() {
   const payload = Buffer.from(
     JSON.stringify({
       role: 'admin',
@@ -340,8 +332,8 @@ function signAdminToken(): string {
   return `${payload}.${sig}`;
 }
 
-function verifyAdminToken(token: string): boolean {
-  const parts = token.split('.');
+function verifyAdminToken(token) {
+  const parts = String(token || '').split('.');
   if (parts.length !== 2) return false;
   const [payload, sig] = parts;
   const expected = crypto
@@ -354,16 +346,14 @@ function verifyAdminToken(token: string): boolean {
   if (!crypto.timingSafeEqual(sigBuf, expBuf)) return false;
 
   try {
-    const decoded = JSON.parse(
-      Buffer.from(payload, 'base64url').toString('utf8')
-    ) as { role?: string; exp?: number };
+    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
     return decoded.role === 'admin' && typeof decoded.exp === 'number' && decoded.exp > Date.now();
   } catch {
     return false;
   }
 }
 
-function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+function requireAdmin(req, res, next) {
   const header = req.headers.authorization || '';
   const match = /^Bearer\s+(.+)$/i.exec(header);
   if (!match || !verifyAdminToken(match[1])) {
@@ -373,7 +363,8 @@ function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   next();
 }
 
-function isSafeImageUrl(url: string): boolean {
+function isSafeImageUrl(url) {
+  if (typeof url !== 'string') return false;
   if (url.startsWith('/src/assets/images/')) return true;
   try {
     const parsed = new URL(url);
@@ -382,16 +373,6 @@ function isSafeImageUrl(url: string): boolean {
     return false;
   }
 }
-
-const VALID_CATEGORIES: PhoneCategory[] = ['flagman', 'biznes', 'bukiluvchan', 'hamyonbop'];
-const VALID_STATUSES: OrderStatus[] = [
-  'Yangi',
-  'Tasdiqlandi',
-  'Yetkazilmoqda',
-  'Yetkazildi',
-  'Bekor qilindi',
-];
-const VALID_PAYMENTS: PaymentMethod[] = ['Naqd', 'Karta', 'Muddatli to‘lov'];
 
 async function startServer() {
   const app = express();
@@ -409,23 +390,14 @@ async function startServer() {
   });
 
   app.post('/api/orders', async (req, res) => {
-    const body = req.body as {
-      customerName?: unknown;
-      phone?: unknown;
-      city?: unknown;
-      address?: unknown;
-      paymentMethod?: unknown;
-      note?: unknown;
-      items?: unknown;
-    };
-
+    const body = req.body || {};
     const customerName = typeof body.customerName === 'string' ? body.customerName.trim() : '';
     const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
     const city = typeof body.city === 'string' ? body.city.trim() : '';
     const address = typeof body.address === 'string' ? body.address.trim() : '';
     const note = typeof body.note === 'string' ? body.note.trim().slice(0, 300) : '';
-    const paymentMethod = VALID_PAYMENTS.includes(body.paymentMethod as PaymentMethod)
-      ? (body.paymentMethod as PaymentMethod)
+    const paymentMethod = VALID_PAYMENTS.includes(body.paymentMethod)
+      ? body.paymentMethod
       : 'Naqd';
 
     if (customerName.length < 2 || customerName.length > 80) {
@@ -445,7 +417,7 @@ async function startServer() {
       return;
     }
 
-    const verifiedItems: OrderRecord['items'] = [];
+    const verifiedItems = [];
     let totalUzs = 0;
 
     for (const rawItem of body.items) {
@@ -453,14 +425,13 @@ async function startServer() {
         res.status(400).json({ error: 'Buyurtma tarkibi noto‘g‘ri.' });
         return;
       }
-      const itemObj = rawItem as Record<string, unknown>;
-      const productId = typeof itemObj.productId === 'string' ? itemObj.productId : '';
+      const productId = typeof rawItem.productId === 'string' ? rawItem.productId : '';
       const quantity =
-        typeof itemObj.quantity === 'number' && Number.isInteger(itemObj.quantity)
-          ? itemObj.quantity
+        typeof rawItem.quantity === 'number' && Number.isInteger(rawItem.quantity)
+          ? rawItem.quantity
           : 0;
-      const storage = typeof itemObj.storage === 'string' ? itemObj.storage.trim() : '';
-      const color = typeof itemObj.color === 'string' ? itemObj.color.trim() : '';
+      const storage = typeof rawItem.storage === 'string' ? rawItem.storage.trim() : '';
+      const color = typeof rawItem.color === 'string' ? rawItem.color.trim() : '';
 
       const product = store.products.find((p) => p.id === productId);
       if (!product) {
@@ -498,14 +469,13 @@ async function startServer() {
       });
     }
 
-    // Decrement stock cleanly
     for (const line of verifiedItems) {
       const prod = store.products.find((p) => p.id === line.productId);
       if (prod) prod.stock = Math.max(0, prod.stock - line.quantity);
     }
 
     const orderCode = `OM-${store.orderSeq++}`;
-    const newOrder: OrderRecord = {
+    const newOrder = {
       id: crypto.randomUUID(),
       orderCode,
       customerName,
@@ -568,7 +538,7 @@ async function startServer() {
       res.status(409).json({ error: 'Admin paroli allaqachon o‘rnatilgan.' });
       return;
     }
-    const { passcode } = req.body as { passcode?: unknown };
+    const { passcode } = req.body || {};
     if (typeof passcode !== 'string' || passcode.trim().length < 6) {
       res.status(400).json({ error: 'Parol kamida 6 ta belgidan iborat bo‘lishi kerak.' });
       return;
@@ -580,7 +550,7 @@ async function startServer() {
   });
 
   app.post('/api/admin/login', (req, res) => {
-    const { passcode } = req.body as { passcode?: unknown };
+    const { passcode } = req.body || {};
     if (typeof passcode !== 'string' || !passcode) {
       res.status(400).json({ error: 'Parolni kiriting.' });
       return;
@@ -626,16 +596,13 @@ async function startServer() {
       res.status(404).json({ error: 'Buyurtma topilmadi.' });
       return;
     }
-    const { status, notifyTelegram } = req.body as {
-      status?: unknown;
-      notifyTelegram?: unknown;
-    };
-    if (!VALID_STATUSES.includes(status as OrderStatus)) {
+    const { status, notifyTelegram } = req.body || {};
+    if (!VALID_STATUSES.includes(status)) {
       res.status(400).json({ error: 'Noto‘g‘ri buyurtma holati.' });
       return;
     }
 
-    order.status = status as OrderStatus;
+    order.status = status;
     saveStore(store);
 
     if (notifyTelegram === true) {
@@ -660,12 +627,10 @@ async function startServer() {
   });
 
   app.post('/api/admin/products', requireAdmin, (req, res) => {
-    const b = req.body as Record<string, unknown>;
+    const b = req.body || {};
     const name = typeof b.name === 'string' ? b.name.trim() : '';
     const brand = typeof b.brand === 'string' ? b.brand.trim() : '';
-    const category = VALID_CATEGORIES.includes(b.category as PhoneCategory)
-      ? (b.category as PhoneCategory)
-      : 'flagman';
+    const category = VALID_CATEGORIES.includes(b.category) ? b.category : 'flagman';
     const priceUzs = Number(b.priceUzs);
     const stock = Number(b.stock);
     const description = typeof b.description === 'string' ? b.description.trim() : '';
@@ -679,14 +644,16 @@ async function startServer() {
       return;
     }
 
-    const storageOptions = Array.isArray(b.storageOptions) && b.storageOptions.length > 0
-      ? b.storageOptions.map((s) => String(s).trim()).filter(Boolean)
-      : ['256 GB', '512 GB'];
-    const colorOptions = Array.isArray(b.colorOptions) && b.colorOptions.length > 0
-      ? b.colorOptions.map((c) => String(c).trim()).filter(Boolean)
-      : ['Qora', 'Olovrang', 'Oq'];
+    const storageOptions =
+      Array.isArray(b.storageOptions) && b.storageOptions.length > 0
+        ? b.storageOptions.map((s) => String(s).trim()).filter(Boolean)
+        : ['256 GB', '512 GB'];
+    const colorOptions =
+      Array.isArray(b.colorOptions) && b.colorOptions.length > 0
+        ? b.colorOptions.map((c) => String(c).trim()).filter(Boolean)
+        : ['Qora', 'Olovrang', 'Oq'];
 
-    const product: PhoneProduct = {
+    const product = {
       id: `ph-${crypto.randomUUID().slice(0, 8)}`,
       name,
       brand,
@@ -717,11 +684,11 @@ async function startServer() {
       res.status(404).json({ error: 'Mahsulot topilmadi.' });
       return;
     }
-    const b = req.body as Record<string, unknown>;
+    const b = req.body || {};
     if (typeof b.name === 'string' && b.name.trim().length >= 2) product.name = b.name.trim();
     if (typeof b.brand === 'string' && b.brand.trim().length >= 2) product.brand = b.brand.trim();
-    if (VALID_CATEGORIES.includes(b.category as PhoneCategory)) {
-      product.category = b.category as PhoneCategory;
+    if (VALID_CATEGORIES.includes(b.category)) {
+      product.category = b.category;
     }
     if (b.priceUzs !== undefined && Number.isFinite(Number(b.priceUzs)) && Number(b.priceUzs) > 0) {
       product.priceUzs = Math.round(Number(b.priceUzs));
@@ -757,12 +724,7 @@ async function startServer() {
   });
 
   app.post('/api/admin/telegram-config', requireAdmin, async (req, res) => {
-    const { botToken, channelId, sendTest } = req.body as {
-      botToken?: unknown;
-      channelId?: unknown;
-      sendTest?: unknown;
-    };
-
+    const { botToken, channelId, sendTest } = req.body || {};
     const tokenStr = typeof botToken === 'string' ? botToken.trim() : '';
     const chanStr = typeof channelId === 'string' ? channelId.trim() : '';
 
@@ -778,7 +740,7 @@ async function startServer() {
     if (tokenStr) runtimeTelegram.botToken = tokenStr;
     if (chanStr) runtimeTelegram.channelId = chanStr;
 
-    let testResult: { sent: boolean; info: string } | null = null;
+    let testResult = null;
     if (sendTest === true) {
       testResult = await sendTelegramMessage(
         '✅ OLOV MOBILE: Telegram bot va kanal muvaffaqiyatli ulandi! Barcha yangi buyurtmalar real vaqt rejimida shu kanalga keladi.'

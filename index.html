@@ -21,9 +21,305 @@
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/src/styles.css" />
   </head>
-  <body class="bg-white text-zinc-950 antialiased selection:bg-orange-500/20 selection:text-orange-900">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body class="bg-white text-zinc-950 antialiased selection:bg-orange-500/20 selection:text-orange-900 min-h-screen flex flex-col">
+    <!-- Strict 3-Zone Black Top Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-zinc-950 text-white border-b border-zinc-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-8">
+        <!-- Zone 1: Brand Wordmark -->
+        <a
+          href="#bosh-sahifa"
+          class="text-xl font-extrabold tracking-tight text-white whitespace-nowrap shrink-0 font-display"
+        >
+          OLOV <span class="text-orange-500">MOBILE</span>
+        </a>
+
+        <!-- Zone 2: Desktop Single-Line Nav Links -->
+        <nav aria-label="Asosiy menyu" class="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-300">
+          <a href="#bosh-sahifa" class="hover:text-orange-400 transition-colors whitespace-nowrap shrink-0">
+            Bosh sahifa
+          </a>
+          <a href="#katalog" class="hover:text-orange-400 transition-colors whitespace-nowrap shrink-0">
+            Katalog
+          </a>
+          <button
+            type="button"
+            id="nav-track-btn"
+            class="hover:text-orange-400 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            Kuzatuv
+          </button>
+          <a href="#afzalliklar" class="hover:text-orange-400 transition-colors whitespace-nowrap shrink-0">
+            Afzalliklar
+          </a>
+          <button
+            type="button"
+            id="nav-admin-btn"
+            class="hover:text-orange-400 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            Admin
+          </button>
+        </nav>
+
+        <!-- Zone 3: Primary Action + Mobile Menu Toggle -->
+        <div class="flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            id="header-cart-btn"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs sm:text-sm font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+              <path d="M3 6h18" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            <span id="cart-count-label" class="tabular-nums">Savat (0)</span>
+          </button>
+
+          <button
+            type="button"
+            id="mobile-menu-toggle"
+            aria-label="Menyuni ochish"
+            aria-expanded="false"
+            class="md:hidden p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-white cursor-pointer"
+          >
+            <svg id="mobile-menu-icon-open" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="4" x2="20" y1="12" y2="12" />
+              <line x1="4" x2="20" y1="6" y2="6" />
+              <line x1="4" x2="20" y1="18" y2="18" />
+            </svg>
+            <svg id="mobile-menu-icon-close" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Mobile Dropdown Menu -->
+      <div id="mobile-menu-panel" class="hidden md:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-4 space-y-2 text-sm font-medium">
+        <a href="#bosh-sahifa" data-mobile-close class="block py-2 text-zinc-200 hover:text-orange-400">
+          Bosh sahifa
+        </a>
+        <a href="#katalog" data-mobile-close class="block py-2 text-zinc-200 hover:text-orange-400">
+          Telefonlar katalogi
+        </a>
+        <button type="button" id="mobile-track-btn" class="block w-full text-left py-2 text-zinc-200 hover:text-orange-400 cursor-pointer">
+          Buyurtmani kuzatish
+        </button>
+        <a href="#afzalliklar" data-mobile-close class="block py-2 text-zinc-200 hover:text-orange-400">
+          Afzalliklar va kafolat
+        </a>
+        <button type="button" id="mobile-admin-btn" class="block w-full text-left py-2 text-orange-400 font-bold cursor-pointer">
+          Admin panel
+        </button>
+      </div>
+    </header>
+
+    <!-- SECTION 1: HERO (JET BLACK + ORANGE + WHITE CONTRAST) -->
+    <section id="bosh-sahifa" class="bg-zinc-950 text-white border-b border-zinc-900">
+      <div class="max-w-7xl mx-auto px-4 sm:px-8 py-12 lg:py-16 space-y-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          <div class="lg:col-span-6 flex flex-col justify-center space-y-6">
+            <p class="text-xs sm:text-sm font-bold tracking-wide text-orange-500">
+              O‘ZBEKISTON ONLINE TELEFON BOZORI
+            </p>
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.08] [text-wrap:balance]">
+              Yangi avlod smartfonlari — bir zumda qo‘lingizda
+            </h1>
+            <p class="text-base sm:text-lg text-zinc-300 max-w-xl leading-relaxed">
+              Rasmiy IMEI ro‘yxatdan o‘tgan original flagmanlar, shaffof narxlar va Telegram kanal orqali real vaqt rejimida tasdiqlanadigan tezkor yetkazib berish.
+            </p>
+
+            <div class="flex flex-wrap items-center gap-3 pt-1">
+              <a
+                href="#katalog"
+                class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-colors whitespace-nowrap shrink-0"
+              >
+                <span>Katalogni ko‘rish</span>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+              </a>
+              <button
+                type="button"
+                id="hero-track-btn"
+                class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-sm transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <span>Buyurtmani tekshirish</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-6 rounded-3xl overflow-hidden border border-zinc-800 bg-zinc-900 min-h-[280px] relative">
+            <img
+              src="/src/assets/images/hero_flagship_phones_1795242059725.jpg"
+              alt="OLOV MOBILE flagman smartfonlar kolleksiyasi"
+              referrerPolicy="no-referrer"
+              class="w-full h-full object-cover lg:h-full"
+              onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
+            />
+            <div class="hidden absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-950 to-orange-950/40 flex flex-col items-center justify-center p-6 text-center">
+              <p class="text-lg font-bold text-white">OLOV MOBILE Flagmanlar</p>
+              <p class="text-xs text-zinc-400 mt-1">Original smartfonlar kolleksiyasi</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4-Column Guarantee Strip -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-zinc-800/80">
+          <div>
+            <p class="text-lg font-extrabold font-mono text-orange-500 tabular-nums">12 oy</p>
+            <p class="text-xs text-zinc-400 mt-0.5">Rasmiy servis kafolati</p>
+          </div>
+          <div>
+            <p class="text-lg font-extrabold font-mono text-white tabular-nums">2 soat</p>
+            <p class="text-xs text-zinc-400 mt-0.5">Toshkent bo‘ylab tezkor yetkazish</p>
+          </div>
+          <div>
+            <p class="text-lg font-extrabold font-mono text-white tabular-nums">IMEI 100%</p>
+            <p class="text-xs text-zinc-400 mt-0.5">Rasmiy ro‘yxatdan o‘tgan</p>
+          </div>
+          <div>
+            <p class="text-lg font-extrabold font-mono text-orange-500 tabular-nums">Real vaqt</p>
+            <p class="text-xs text-zinc-400 mt-0.5">Telegram orqali tezkor qabul</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: WHITE CATALOG WITH INTERACTIVE MENU & FILTERS -->
+    <main id="katalog" class="bg-white text-zinc-950 py-14 flex-1">
+      <div class="max-w-7xl mx-auto px-4 sm:px-8 space-y-8">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold tracking-wide text-orange-600">SMARTFONLAR KATALOGI</p>
+            <h2 class="text-3xl font-extrabold text-zinc-950 mt-1">
+              O‘zingizga mos modelni tanlang
+            </h2>
+          </div>
+          <p id="catalog-count" class="text-sm text-zinc-500 tabular-nums">
+            Yuklanmoqda...
+          </p>
+        </div>
+
+        <!-- Interactive Menu & Filter Bar -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-zinc-200">
+          <div id="category-tabs" class="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <button type="button" data-category="all" class="cat-tab px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer bg-zinc-950 text-white">Barchasi</button>
+            <button type="button" data-category="flagman" class="cat-tab px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer bg-zinc-100 text-zinc-700 hover:bg-zinc-200">Flagman</button>
+            <button type="button" data-category="biznes" class="cat-tab px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer bg-zinc-100 text-zinc-700 hover:bg-zinc-200">Biznes</button>
+            <button type="button" data-category="bukiluvchan" class="cat-tab px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer bg-zinc-100 text-zinc-700 hover:bg-zinc-200">Bukiluvchi</button>
+            <button type="button" data-category="hamyonbop" class="cat-tab px-4 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer bg-zinc-100 text-zinc-700 hover:bg-zinc-200">Hamyonbop</button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <div class="relative flex-1 sm:w-56">
+              <svg class="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="search"
+                id="catalog-search"
+                placeholder="Model yoki brend..."
+                class="w-full pl-9 pr-3 py-2 rounded-xl border border-zinc-300 focus:border-orange-500 focus:outline-none text-sm"
+              />
+            </div>
+
+            <select
+              id="catalog-brand"
+              aria-label="Brend bo‘yicha saralash"
+              class="px-3 py-2 rounded-xl border border-zinc-300 text-xs font-semibold bg-white focus:border-orange-500 focus:outline-none"
+            >
+              <option value="all">Barcha brendlar</option>
+            </select>
+
+            <select
+              id="catalog-sort"
+              aria-label="Narx bo‘yicha tartiblash"
+              class="px-3 py-2 rounded-xl border border-zinc-300 text-xs font-semibold bg-white focus:border-orange-500 focus:outline-none"
+            >
+              <option value="featured">Ommabop</option>
+              <option value="price-asc">Arzondan qimmatga</option>
+              <option value="price-desc">Qimmatdan arzonga</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Product Grid Container -->
+        <div id="catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </div>
+    </main>
+
+    <!-- SECTION 3: PROCESS / TRUST (BLACK CONTRAST BAND) -->
+    <section id="afzalliklar" class="bg-zinc-950 text-white py-14 border-t border-zinc-900">
+      <div class="max-w-7xl mx-auto px-4 sm:px-8 space-y-8">
+        <div class="max-w-2xl">
+          <p class="text-xs font-bold tracking-wide text-orange-500">ISHONCHLI TIZIM</p>
+          <h2 class="text-3xl font-extrabold text-white mt-1">
+            Onlayn buyurtma qanday ishlaydi?
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2">
+            <p class="text-sm font-mono font-bold text-orange-500">01.</p>
+            <h3 class="text-lg font-bold text-white">Model va xotirani tanlang</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Katalogdan smartfon xotira hajmi va rangini belgilab savatga qo‘shing.
+            </p>
+          </div>
+          <div class="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2">
+            <p class="text-sm font-mono font-bold text-orange-500">02.</p>
+            <h3 class="text-lg font-bold text-white">Real vaqt Telegram tasdig‘i</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Buyurtmangiz shu zahoti Telegram kanalga va admin panelga yuboriladi.
+            </p>
+          </div>
+          <div class="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2">
+            <p class="text-sm font-mono font-bold text-orange-500">03.</p>
+            <h3 class="text-lg font-bold text-white">Eshikkacha yetkazib berish</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Buyurtmani tekshirib olganingizdan so‘ng naqd, karta yoki muddatli to‘lov qilasiz.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-black text-zinc-400 py-8 px-4 sm:px-8 border-t border-zinc-900 text-xs">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <span class="font-extrabold text-white">
+            OLOV <span class="text-orange-500">MOBILE</span>
+          </span>
+          <span aria-hidden="true">·</span>
+          <span class="inline-flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+            <span>+998 (71) 200-00-00</span>
+          </span>
+        </div>
+
+        <div class="flex items-center gap-5">
+          <button type="button" id="footer-track-btn" class="hover:text-white cursor-pointer">
+            Buyurtmani kuzatish
+          </button>
+          <button type="button" id="footer-admin-btn" class="hover:text-orange-400 font-semibold cursor-pointer">
+            Admin boshqaruv paneli
+          </button>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Modal & Drawer Mount Point -->
+    <div id="modal-root"></div>
+
+    <script type="module" src="/src/app.js"></script>
   </body>
 </html>
